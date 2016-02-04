@@ -1,20 +1,21 @@
-/*
- * This file is part of the source of
+/*  This file is part of the source of
  * 
- * Probatron4J - a Schematron validator for Java(tm)
+ *  Probatron4J - a Schematron validator for Java(tm)
  * 
- * Copyright (C) 2009 Griffin Brown Digitial Publishing Ltd
- * 
- * This program is free software: you can redistribute it and/or modify it under the terms of
- * the GNU Affero General Public License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
- * the GNU Affero General Public License for more details.
- * 
- * You should have received a copy of the GNU Affero General Public License along with this
- * program. If not, see <http://www.gnu.org/licenses/>.
+ *  Copyright (C) 2009 Griffin Brown Digitial Publishing Ltd
+ *   
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as
+ *  published by the Free Software Foundation, either version 3 of the
+ *  License, or (at your option) any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.probatron;
@@ -37,21 +38,21 @@ import org.apache.log4j.Logger;
 public class Utils
 {
     public final static String SCHEMATRON_NAME = "http://purl.oclc.org/dsdl/schematron";
-    public static final String SVRL_NAME = "http://purl.oclc.org/dsdl/svrl";
-    public static final String PROBATRON_FUNCTION_NAME = "http://www.probatron.org/functions";
+    public static String SVRL_NAME = "http://purl.oclc.org/dsdl/svrl";
     private static final String PROPERTY_TRAX_IMPLEMENTATION = "javax.xml.transform.TransformerFactory";
     private static final String SAXON_TRAX_CLASS = "net.sf.saxon.TransformerFactoryImpl";
     private final static int READ_BUFFER_SIZE = 32768;
     final public static int CLOSE_NONE = 0x0000;
     final public static int CLOSE_IN = 0x0001;
     final public static int CLOSE_OUT = 0x0010;
+    
 
     static Logger logger = Logger.getLogger( Utils.class );
 
 
     /**
-     * Returns a new {@link TransformerFactory}&nbsp;(TrAX implementation).
-     * 
+     * Returns a new {@link TransformerFactory}&nbsp;(TrAX implementation). 
+     *      
      * @return a TransformerFactory implementation
      */
     public static TransformerFactory getTransformerFactory()
@@ -61,11 +62,6 @@ public class Utils
     }
 
 
-    /**
-     * Dereferences a URL.
-     * 
-     * @return the resource as bytes, or NULL in the case of an Exception
-     */
     public static byte[] derefUrl( URL url )
     {
         byte[] ba = null;
@@ -90,7 +86,8 @@ public class Utils
 
 
     /**
-     * Reads all of an InputStream content into a byte array, and closes that InputStream.
+     * Reads all of an InputStream content into a byte array, and closes that
+     * InputStream.
      * 
      * @param in
      *            the InputStream to be read
@@ -127,7 +124,7 @@ public class Utils
 
         long written = 0;
         int count;
-        while( ( count = in.read( buf ) ) != -1 )
+        while( ( count = in.read( buf ) ) != - 1 )
         {
             out.write( buf, 0, count );
             written += count;
@@ -140,6 +137,8 @@ public class Utils
         {
             streamClose( out );
         }
+
+        buf = null;
 
         return written;
     }
@@ -177,12 +176,7 @@ public class Utils
             throws IOException
     {
         File f = new File( fn );
-        boolean ret = f.createNewFile();
-
-        if( !ret )
-        {
-            logger.error( "File " + fn + " not created." );
-        }
+        f.createNewFile();
 
         try
         {
@@ -204,7 +198,8 @@ public class Utils
 
 
     /**
-     * Writes the bytes in <tt>ba</tt> to the file named <tt>fn</tt>, creating it if necessary.
+     * Writes the bytes in <tt>ba</tt> to the file named <tt>fn</tt>,
+     * creating it if necessary.
      * 
      * @param ba
      *            the byte array to be written
@@ -215,12 +210,7 @@ public class Utils
     public static void writeBytesToFile( byte[] ba, String fn ) throws IOException
     {
         File f = new File( fn );
-        boolean ret = f.createNewFile();
-
-        if( !ret )
-        {
-            logger.error( "File " + fn + " was not created." );
-        }
+        f.createNewFile();
 
         FileOutputStream fos = null;
         ByteArrayInputStream bis = null;
@@ -246,7 +236,7 @@ public class Utils
         String ret = null;
 
         int n = xpath.indexOf( "@" );
-        if( n != -1 )
+        if( n != - 1 )
         {
             ret = xpath.substring( 0, n );
             logger.trace( "Trimmed xpath to: " + ret );

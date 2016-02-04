@@ -19,26 +19,20 @@
 
 package org.probatron;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.xml.sax.SAXException;
 
-/**
- * Class to support command-line invocation of Probatron4J.
- */
 public class Driver
 {
     private final static String PROPERTY_LOGLVL = "property://probatron.org/log-level";
     private final static String DEFAULT_LOGLVL = "WARN";
     static Logger logger = Logger.getLogger( Driver.class );
-    static int APP_EXIT_FAIL = -1;
-    static int APP_EXIT_OKAY = 0;
-    static Session theSession;
+    static int APP_EXIT_FAIL = - 1;
+    static int APP_EXIT_OKAY = 0;    
+    static Session theSession = new Session();
 
     static
     {
@@ -61,13 +55,11 @@ public class Driver
         System.err.println( "Options:" );
         System.err.println( "-n0|1     Do not [or do] emit line/col numbers in report" );
         System.err.println( "-p<phase> Validate using the phase named <phase>" );
-        // TODO
-        // System.err.println( "-q0|1     Do not [or do] validate the Schematron schema itself"
-        // );
+        // TODO        
+        //        System.err.println( "-q0|1     Do not [or do] validate the Schematron schema itself" );
         System.err.println( "-r0       Output report as terse SVRL" );
         System.err.println( "-r1       Output report as verbose SVRL" );
-        // System.err.println(
-        // "-r2       Output report as the original instance with SVRL merged in situ" );
+       // System.err.println( "-r2       Output report as the original instance with SVRL merged in situ" );
         System.err.println( "-v        Show version info and halt" );
     }
 
@@ -81,8 +73,7 @@ public class Driver
         }
         else if( arg.startsWith( "-r" ) )
         {
-            theSession.setReportFormat( new Integer( arg.substring( 2, arg.length() ) )
-                    .intValue() );
+            theSession.setReportFormat( new Integer(arg.substring( 2, arg.length())).intValue() );
         }
         else if( arg.startsWith( "-p" ) )
         {
@@ -96,22 +87,16 @@ public class Driver
     }
 
 
-    static private String fixArg( String arg )
+    static String fixArg( String arg )
     {
         // user concession, if no URL scheme assume these are files
-        return arg.indexOf( ":" ) == -1 ? "file:" + arg : arg;
+        return arg.indexOf( ":" ) == - 1 ? "file:" + arg : arg;
     }
 
 
-    /**
-     * @param args
-     */
-    @SuppressWarnings("serial")
     public static void main( String[] args )
     {
         long t = System.currentTimeMillis();
-        theSession = new Session();
-
         logger.info( "Starting Probatron" );
 
         if( args.length == 1 && ( args[ 0 ].equals( "-v" ) || args[ 0 ].equals( "-version" ) ) )
@@ -130,7 +115,7 @@ public class Driver
         for( int i = 0; i < args.length - 2; i++ )
         {
             String arg = args[ i ];
-            if( !arg.startsWith( "-" ) )
+            if( ! arg.startsWith( "-" ) )
             {
                 logger.fatal( "Unrecognized command line argument: " + arg );
                 System.exit( APP_EXIT_FAIL );
@@ -142,12 +127,7 @@ public class Driver
         }
 
         String candidate = fixArg( args[ args.length - 2 ] );
-        theSession.setSchemaSysId( fixArg( args[ args.length - 1 ] ) );
-
-        File f = new File( "." );
-        String path = f.getAbsolutePath().replaceAll( "[\\\\/]\\.", "" );
-        theSession.setFsContextDir( path );
-        logger.debug( "Setting FS context to " + path );
+        theSession.setSchemaDoc( fixArg( args[ args.length - 1 ] ) );
 
         try
         {
@@ -158,16 +138,9 @@ public class Driver
         {
             logger.fatal( e );
         }
-        catch( SAXException saxe )
-        {
-            logger.fatal( saxe );
-        }
-        catch( IOException ioe )
-        {
-            logger.fatal( ioe );
-        }
 
         logger.info( "Done. Elapsed time (ms):" + ( System.currentTimeMillis() - t ) );
 
     }
+
 }

@@ -32,8 +32,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * Processed Schematron's &lt;include> element. This filter processes an instance and performs
- * inclusion of documents referenced by Schematron's &lt;include> element. Also strips out p
- * elements.
+ * inclusion of documents referenced by Schamtron's &lt;include> element. *
  */
 public class IncludingFilter extends XMLFilterImpl
 {
@@ -41,8 +40,6 @@ public class IncludingFilter extends XMLFilterImpl
     static Logger logger = Logger.getLogger( IncludingFilter.class );
     private boolean outermost;
     private URL base;
-    boolean foundAbstractPatterns;
-    boolean suspend;
 
 
     public IncludingFilter( URL base, boolean outermost )
@@ -69,19 +66,11 @@ public class IncludingFilter extends XMLFilterImpl
     {
         boolean isIncludeElement = localName.equals( "include" )
                 && uri.equals( Utils.SCHEMATRON_NAME );
-        
-        if( uri.equals( Utils.SCHEMATRON_NAME ) && localName.equals( "p" ) )
-        {
-            suspend = false;
-            return;
-        }
 
         if( !isIncludeElement )
         {
             super.endElement( uri, localName, name );
         }
-        
-        
     }
 
 
@@ -91,21 +80,6 @@ public class IncludingFilter extends XMLFilterImpl
     {
         boolean isIncludeElement = localName.equals( "include" )
                 && uri.equals( Utils.SCHEMATRON_NAME );
-
-        boolean isAbstractPattern = localName.equals( "pattern" )
-                && uri.equals( Utils.SCHEMATRON_NAME ) && atts != null
-                && atts.getValue( "abstract" ) != null;
-
-        if( isAbstractPattern )
-        {
-            this.foundAbstractPatterns = true;
-        }
-
-        if( uri.equals( Utils.SCHEMATRON_NAME ) && localName.equals( "p" ) )
-        {
-            suspend = true;
-            return;
-        }
 
         if( isIncludeElement )
         {
@@ -137,20 +111,6 @@ public class IncludingFilter extends XMLFilterImpl
             super.startElement( uri, localName, name, atts );
         }
 
-    }
-
-
-    @Override
-    public void characters( char[] arg0, int arg1, int arg2 ) throws SAXException
-    {
-        if( suspend )
-        {
-            return;
-        }
-        else
-        {
-            super.characters( arg0, arg1, arg2 );
-        }
     }
 
 }

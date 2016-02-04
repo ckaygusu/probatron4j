@@ -24,64 +24,39 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import net.sf.saxon.s9api.QName;
-import net.sf.saxon.s9api.SaxonApiException;
-import net.sf.saxon.s9api.Serializer;
-import net.sf.saxon.s9api.XdmAtomicValue;
-import net.sf.saxon.s9api.XsltCompiler;
-import net.sf.saxon.s9api.XsltExecutable;
-import net.sf.saxon.s9api.XsltTransformer;
-
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.megginson.sax.XMLWriter;
 
-/**
- * Represents a Schematron schema.
- */
 public class SchematronSchema
 {
-    static Logger logger = Logger.getLogger( SchematronSchema.class );
-
     private byte[] schemaAsBytes;
-    private URL schemaUrl;
-    private JarUriResolver jur = new JarUriResolver();
+    static Logger logger = Logger.getLogger( SchematronSchema.class );
     private Session session;
+    private URL url;
 
 
-    /**
-     * Constructs an instance from the Schematron schema document located at the passed URL.
-     */
-    public SchematronSchema( Session session ) throws MalformedURLException
+    public SchematronSchema( Session session, URL url )
     {
-
         this.session = session;
-        this.schemaUrl = new URL( session.getSchemaSysId() );
-
-        logger.debug( "Constructing from URL: " + schemaUrl.toString() );
-        this.schemaAsBytes = Utils.derefUrl( schemaUrl );
-
+        logger.debug( "Constructing from URL: " + url.toString() );
+        this.schemaAsBytes = Utils.derefUrl( url );
+        this.url = url;
     }
 
 
-    /**
-     * Constructs an instance from the Schematron schema document of the passed stream.
-     */
     public SchematronSchema( InputStream is )
     {
         logger.debug( "Constructing from InpuStream" );
@@ -96,19 +71,14 @@ public class SchematronSchema
     }
 
 
-    /**
-     * Applies this schema to the document located at the passed URL
-     * 
-     * @return the validation report generated
-     */
-    public ValidationReport validateCandidate( URL candidateUrl )
+    public ValidationReport validateCandidate( URL url )
     {
         ValidationReport vr = null;
-        InputStream is = null; // the stream for the candidate
 
+        InputStream is = null;
         try
         {
-            URLConnection conn = candidateUrl.openConnection();
+            URLConnection conn = url.openConnection();
             conn.connect();
             is = conn.getInputStream();
             vr = validateCandidate( is );
@@ -128,82 +98,71 @@ public class SchematronSchema
 
     static void doIncludePreprocess( byte[] schemaAsBytes, ByteArrayOutputStream baos )
     {
-    // do nothing
+
     }
 
 
     private ValidationReport validateCandidate( InputStream candidateStream )
     {
-
+        JarUriResolver jur = new JarUriResolver();
         TransformerFactory jarAwareTransformerFactory = Utils.getTransformerFactory();
         jarAwareTransformerFactory.setURIResolver( jur );
 
         ValidationReport vr = null;
-        Transformer t = null;
 
+        Transformer t = null;
         try
         {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] interim = null;
-
+            
             // Step 1. do the inclusion
             logger.debug( "Performing inclusion ..." );
             XMLReader reader = XMLReaderFactory.createXMLReader();
-            IncludingFilter filter = new IncludingFilter( schemaUrl, true );
+            IncludingFilter filter = new IncludingFilter( url, true );
             filter.setParent( reader );
             filter.setContentHandler( new XMLWriter( new OutputStreamWriter( baos ) ) );
             filter.parse( new InputSource( new ByteArrayInputStream( this.schemaAsBytes ) ) );
             interim = baos.toByteArray();
             baos.reset();
 
-            Source xsltSource = null;
-
-            // optimisation - if no abstract patterns exist, this step can be skipped
-            if( filter.foundAbstractPatterns )
-            {
-                // Step 2. for abstract template processing
-                logger.debug( "Running abstract template expansion transform ..." );
-                xsltSource = jur.resolve( "iso_abstract_expand.xsl", null );
-                t = jarAwareTransformerFactory.newTransformer( xsltSource );
-                t.transform( new StreamSource( new ByteArrayInputStream( interim ) ),
-                        new StreamResult( baos ) );
-                interim = baos.toByteArray();
-                baos.reset();
-            }
-
-            // Utils.writeBytesToFile( interim, "interim.xml" );
+            // Step 2. for abstract template processing
+            logger.debug( "Running abstract template expansion transform ..." );
+            Source xsltSource = jur.resolve( "iso_abstract_expand.xsl", null );
+            t = jarAwareTransformerFactory.newTransformer( xsltSource );
+            t.transform( new StreamSource( new ByteArrayInputStream( interim ) ),
+                    new StreamResult( baos ) );
+            interim = baos.toByteArray();
+            baos.reset();
 
             // Step 3. compile schema to XSLT
-            interim = compileToXslt( interim );
+            logger.debug( "Transforming schema to XSLT ..." );
+            xsltSource = jur.resolve( "iso_svrl_for_xslt2.xsl", null );
+            t = jarAwareTransformerFactory.newTransformer( xsltSource );
+            t.setParameter( "full-path-notation", "4" );
+            if( session.getPhase() != null )
+            {
+                t.setParameter( "phase", session.getPhase() );
+            }
+            t.transform( new StreamSource( new ByteArrayInputStream( interim ) ),
+                    new StreamResult( baos ) );
+            interim = baos.toByteArray();
+            baos.reset();
 
             // Step 4. Apply XSLT to candidate
-            interim = applyXsltSchema( candidateStream, interim );
-
-            // Generate the Validation report from the raw SVRL thus created
-            vr = new ValidationReport( interim );
+            logger.debug( "Applying XSLT to candidate" );
+            xsltSource = new StreamSource( new ByteArrayInputStream( interim ) );
+            t = Utils.getTransformerFactory().newTransformer( xsltSource );
+            t.transform( new StreamSource( candidateStream ), new StreamResult( baos ) );
+            vr = new ValidationReport( baos.toByteArray() );
 
         }
-        catch( TransformerException e )
+        catch( Exception e )
         {
             logger.fatal( e.getMessage() );
             throw new RuntimeException(
-                    "Cannot instantiate XSLT transformer, or transformation failure: " + e, e );
-        }
-        catch( IOException e )
-        {
-            logger.fatal( e.getMessage() );
-            throw new RuntimeException( "IOException: " + e, e );
-        }
-        catch( SAXException e )
-        {
-            logger.fatal( e.getMessage() );
-            throw new RuntimeException( "SAXException: " + e, e );
-        }
-        catch( SaxonApiException e )
-        {
-            logger.fatal( e.getMessage() );
-            throw new RuntimeException( "SaxonApiException: " + e, e );
-
+                    "Cannot instantiate XSLT transformer, or transformation failure: "
+                            + e.getMessage(), e );
         }
 
         return vr;
@@ -211,67 +170,9 @@ public class SchematronSchema
     }
 
 
-    private byte[] applyXsltSchema( InputStream candidateStream, byte[] interim )
-            throws SaxonApiException
-    {
-        logger.debug( "Applying XSLT version of schema to candidate" );
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        XsltCompiler comp = Runtime.getSaxonProcessor().newXsltCompiler();
-
-        Source ss = new StreamSource( new ByteArrayInputStream( interim ) );
-        XsltExecutable xx = comp.compile( ss );
-        XsltTransformer transformer = xx.load();
-        transformer.setParameter( new QName( "_uuid_" ), new XdmAtomicValue( session.getUuid()
-                .toString() ) );
-        transformer.setSource( new StreamSource( candidateStream, schemaUrl.toExternalForm() ) );
-
-        Serializer ser = new Serializer();
-        ser.setOutputStream( baos );
-        transformer.setDestination( ser );
-
-        transformer.transform();
-
-        return baos.toByteArray();
-    }
-
-
-    private byte[] compileToXslt( byte[] interim ) throws TransformerException,
-            SaxonApiException
-    {
-        logger.debug( "Transforming schema to XSLT ..." );
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        XsltCompiler comp = Runtime.getSaxonProcessor().newXsltCompiler();
-        comp.setURIResolver( jur );
-        Source ss = jur.resolve( "iso_svrl_for_xslt2.xsl", null );
-        XsltExecutable xx = comp.compile( ss );
-        XsltTransformer transformer = xx.load();
-
-        transformer.setSource( new StreamSource( new ByteArrayInputStream( interim ) ) );
-
-        Serializer ser = new Serializer();
-        ser.setOutputStream( baos );
-        transformer.setDestination( ser );
-
-        transformer.transform();
-
-        interim = baos.toByteArray();
-
-        // Utils.writeBytesToFile( interim, "interim.xml" );
-
-        return interim;
-    }
-
-
-    /**
-     * @return if this instance was constucted with URL returns that; otherwise null
-     */
     public URL getUrl()
     {
-        return schemaUrl;
+        return url;
     }
 
 }
