@@ -18,32 +18,31 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.probatron;
+package com.ismtek.citta;
 
-import java.util.HashMap;
+import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.log4j.Logger;
-import org.xml.sax.Locator;
-
-@SuppressWarnings("serial")
-public class LogicalPhysicalMap extends HashMap<String, PhysicalLocation>
+public class PhysicalLocation
 {
-    static Logger logger = Logger.getLogger( LogicalPhysicalMap.class );
+    public int line;
+    public int col;
 
 
-    void handleMapping( TreeContext tc, Locator loc )
+    public PhysicalLocation()
+    {}
+
+
+    public PhysicalLocation( int line, int col )
     {
-        String pxpath =  tc.currentContext(); // guaranteed to have no attribute part
-
-        PhysicalLocation pl = get( pxpath );
-        if( pl != null )
-        {
-            remove( pxpath );
-            logger.trace( "Associating physical location with pseudo-XPath: <" + pxpath + ">" );
-            put( pxpath, new PhysicalLocation( loc.getLineNumber(), loc.getColumnNumber() ) );
-        }
-        // else do nothing
-
+        this.line = line;
+        this.col = col;
     }
 
+
+    public AttributesImpl addAsAttributes( AttributesImpl atts )
+    {
+        atts.addAttribute( "", "line", "line", "CDATA", "" + line );
+        atts.addAttribute( "", "col", "col", "CDATA", "" + col );
+        return atts;
+    }
 }

@@ -17,7 +17,7 @@
  * program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.probatron;
+package com.ismtek.citta;
 
 import org.apache.log4j.Logger;
 import org.xml.sax.helpers.XMLFilterImpl;

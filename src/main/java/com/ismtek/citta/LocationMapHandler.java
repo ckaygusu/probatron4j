@@ -18,22 +18,27 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.probatron;
+package com.ismtek.citta;
 
 import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.ext.LexicalHandler;
 
-public class SvrlHarvestHandler implements ContentHandler
+public class LocationMapHandler implements ContentHandler, LexicalHandler
 {
 
-    static Logger logger = Logger.getLogger( SvrlHarvestHandler.class );
+    static Logger logger = Logger.getLogger( LocationMapHandler.class );
     ValidationReport rpt;
+    String rollingPath;
+    int depth;
+    TreeContext tc = new TreeContext();
+    Locator loc;
 
 
-    public SvrlHarvestHandler( ValidationReport rpt )
+    public LocationMapHandler( ValidationReport rpt )
     {
         this.rpt = rpt;
     }
@@ -47,13 +52,13 @@ public class SvrlHarvestHandler implements ContentHandler
 
     public void endDocument() throws SAXException
     {
-        logger.debug( "SVRL harvest done; xpath count:" + rpt.locMap.size() );
+        logger.debug( "Map enrichment done." );
     }
 
 
     public void endElement( String arg0, String arg1, String arg2 ) throws SAXException
     {
-    // do nothing
+        tc.onEndElement();
     }
 
 
@@ -75,9 +80,9 @@ public class SvrlHarvestHandler implements ContentHandler
     }
 
 
-    public void setDocumentLocator( Locator arg0 )
+    public void setDocumentLocator( Locator loc )
     {
-    // do nothing
+        this.loc = loc;
     }
 
 
@@ -89,39 +94,90 @@ public class SvrlHarvestHandler implements ContentHandler
 
     public void startDocument() throws SAXException
     {
-        logger.debug( "Beginning SVRL harvest" );
+        logger.debug( "Beginning map enrichment" );
     }
 
 
-    public void startElement( String uri, String localName, String arqName, Attributes atts )
+    public void startElement( String uri, String localName, String qName, Attributes atts )
             throws SAXException
     {
-        if( uri.equals( Utils.SVRL_NAME ) )
-        {
-            if( localName.equals( "successful-report" )
-                    || localName.equals( "failed-assert" ) )
-            {
-                String xpath = atts.getValue( "location" );
-                logger.trace( "Harvesting xpath:" + xpath );
+        tc.onStartElement( uri, localName );
+        this.rpt.locMap.handleMapping( this.tc, this.loc );
 
-                if( this.rpt.locMap.get( xpath ) == null )
-                {
-                    // TODO: handle paths with atts
-                    xpath = Utils.trimAttributePart( xpath );
-                    this.rpt.locMap.put( xpath, new PhysicalLocation() );
-                }
-            }
-            else if( localName.equals( "ns-prefix-in-attribute-values" ) )
+        if( uri != "" )
+        {
+            String regPrefix = this.rpt.nsMap.prefixForNs( uri );
+            if( regPrefix == null )
             {
-                String prefix = atts.getValue( "prefix" );
-                String ns = atts.getValue( "uri" );
-                this.rpt.nsMap.registerMapping( prefix, ns );
+                String prefix = null;
+                if( qName.indexOf( ":" ) != - 1 )
+                {
+                    prefix = qName.substring( 0, qName.indexOf( ":" ) );
+                }
+                if( prefix != null )
+                {
+                    this.rpt.nsMap.registerMapping( prefix, uri );
+                }
+                else
+                {
+                    this.rpt.nsMap.registerUnprefixed( uri );
+                }
+
             }
         }
+
     }
 
 
     public void startPrefixMapping( String prefix, String url ) throws SAXException
+    {
+    // do nothing
+    }
+
+
+    public void comment( char[] arg0, int arg1, int arg2 ) throws SAXException
+    {
+    // do nothing
+
+    }
+
+
+    public void endCDATA() throws SAXException
+    {
+    // do nothing
+
+    }
+
+
+    public void endDTD() throws SAXException
+    {
+    // do nothing
+
+    }
+
+
+    public void endEntity( String arg0 ) throws SAXException
+    {
+    // do nothing
+
+    }
+
+
+    public void startCDATA() throws SAXException
+    {
+    // do nothing
+
+    }
+
+
+    public void startDTD( String arg0, String arg1, String arg2 ) throws SAXException
+    {
+    // do nothing
+
+    }
+
+
+    public void startEntity( String name ) throws SAXException
     {
     // do nothing
     }

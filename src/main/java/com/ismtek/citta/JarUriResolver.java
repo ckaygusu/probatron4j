@@ -18,31 +18,27 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.probatron;
+package com.ismtek.citta;
 
-import org.xml.sax.helpers.AttributesImpl;
+import java.io.InputStream;
 
-public class PhysicalLocation
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.URIResolver;
+import javax.xml.transform.stream.StreamSource;
+
+import org.apache.log4j.Logger;
+
+public class JarUriResolver implements URIResolver
 {
-    public int line;
-    public int col;
+    static Logger logger = Logger.getLogger( JarUriResolver.class );
 
-
-    public PhysicalLocation()
-    {}
-
-
-    public PhysicalLocation( int line, int col )
+    public Source resolve( String href, String base ) throws TransformerException
     {
-        this.line = line;
-        this.col = col;
+        logger.debug( "Resolving stylesheet URI: " + href );
+        InputStream is = JarUriResolver.class.getResourceAsStream( "/resource/stylesheet/"
+                + href );
+        return new StreamSource( is );        
     }
 
-
-    public AttributesImpl addAsAttributes( AttributesImpl atts )
-    {
-        atts.addAttribute( "", "line", "line", "CDATA", "" + line );
-        atts.addAttribute( "", "col", "col", "CDATA", "" + col );
-        return atts;
-    }
 }

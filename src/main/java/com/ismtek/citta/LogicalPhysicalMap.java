@@ -18,27 +18,32 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.probatron;
+package com.ismtek.citta;
 
-import java.io.InputStream;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
-import javax.xml.transform.stream.StreamSource;
+import java.util.HashMap;
 
 import org.apache.log4j.Logger;
+import org.xml.sax.Locator;
 
-public class JarUriResolver implements URIResolver
+@SuppressWarnings("serial")
+public class LogicalPhysicalMap extends HashMap<String, PhysicalLocation>
 {
-    static Logger logger = Logger.getLogger( JarUriResolver.class );
+    static Logger logger = Logger.getLogger( LogicalPhysicalMap.class );
 
-    public Source resolve( String href, String base ) throws TransformerException
+
+    void handleMapping( TreeContext tc, Locator loc )
     {
-        logger.debug( "Resolving stylesheet URI: " + href );
-        InputStream is = JarUriResolver.class.getResourceAsStream( "/resource/stylesheet/"
-                + href );
-        return new StreamSource( is );        
+        String pxpath =  tc.currentContext(); // guaranteed to have no attribute part
+
+        PhysicalLocation pl = get( pxpath );
+        if( pl != null )
+        {
+            remove( pxpath );
+            logger.trace( "Associating physical location with pseudo-XPath: <" + pxpath + ">" );
+            put( pxpath, new PhysicalLocation( loc.getLineNumber(), loc.getColumnNumber() ) );
+        }
+        // else do nothing
+
     }
 
 }
