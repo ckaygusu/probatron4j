@@ -1,10 +1,39 @@
 plugins {
     id 'java'
+    id 'maven'
+    id 'maven-publish'
     id 'com.github.johnrengelman.shadow' version '1.2.3'
+    id 'com.jfrog.bintray' version '1.6'
 }
 
 repositories {
     mavenCentral()
+}
+
+bintray {
+    user = 'ckaygusu'
+    key = System.getenv('BINTRAY_API_KEY')
+
+    publications = ['BintrayPublication']
+
+    pkg {
+        repo = 'maven'
+        name = 'citta'
+        vcsUrl = 'https://github.com/ckaygusu/probatron4j.git'
+        licenses = ['Apache-2.0']
+        // TODO: mavenCentral'e de publish edebiliriz
+    }
+}
+
+publishing {
+    publications {
+        BintrayPublication(MavenPublication) {
+            from components.java
+            groupId 'com.ismtek'
+            artifactId 'citta'
+            version '0.0.1'
+        }
+    }
 }
 
 jar {
@@ -13,22 +42,10 @@ jar {
                 "Original-Vendor": "Griffin Brown Digital Publishing Ltd",
                 "Original-Title": "Probatron4J",
                 "Maintainer": "github.com/ckaygusu",
-                "Implementation-Title": "Pars",
-                "Implementation-Version" : "0.1alpha",
-                "Main-Class": "org.probatron.Driver"
+                "Implementation-Title": "Citta",
+                "Implementation-Version" : "0.0.1",
+                "Main-Class": "com.ismtek.citta.Driver"
         )
-    }
-
-    // Bundle all the dependencies into the jar.
-    from {
-        configurations.compile.collect {it.isDirectory() ? it: zipTree(it)}
-        configurations.runtime.collect {it.isDirectory() ? it: zipTree(it)}
-    }
-
-    shadow {
-        exclude 'META-INF/*.SF'
-        exclude 'META-INF/*.RSA'
-        exclude 'META-INF/*.DSA'
     }
 }
 
