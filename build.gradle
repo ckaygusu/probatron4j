@@ -1,4 +1,7 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '1.2.3'
+}
 
 repositories {
     mavenCentral()
@@ -19,11 +22,18 @@ jar {
     // Bundle all the dependencies into the jar.
     from {
         configurations.compile.collect {it.isDirectory() ? it: zipTree(it)}
+        configurations.runtime.collect {it.isDirectory() ? it: zipTree(it)}
+    }
+
+    shadow {
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.RSA'
+        exclude 'META-INF/*.DSA'
     }
 }
 
-
 dependencies {
+    runtime 'net.sf.saxon:Saxon-HE:9.7.0-2'
     compile 'org.apache.logging.log4j:log4j-1.2-api:2.5'
     compile 'org.apache.logging.log4j:log4j-api:2.5'
     compile 'org.apache.logging.log4j:log4j-core:2.5'
