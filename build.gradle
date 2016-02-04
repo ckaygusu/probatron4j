@@ -1,0 +1,30 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes(
+                "Original-Vendor": "Griffin Brown Digital Publishing Ltd",
+                "Original-Title": "Probatron4J",
+                "Maintainer": "github.com/ckaygusu",
+                "Implementation-Title": "Pars",
+                "Implementation-Version" : "0.1alpha",
+                "Main-Class": "org.probatron.Driver"
+        )
+    }
+
+    // Bundle all the dependencies into the jar.
+    from {
+        configurations.compile.collect {it.isDirectory() ? it: zipTree(it)}
+    }
+}
+
+
+dependencies {
+    compile 'org.apache.logging.log4j:log4j-1.2-api:2.5'
+    compile 'org.apache.logging.log4j:log4j-api:2.5'
+    compile 'org.apache.logging.log4j:log4j-core:2.5'
+}
