@@ -70,7 +70,7 @@ public class SchematronSchema
         }
     }
 
-
+    @Deprecated
     public ValidationReport validateCandidate( URL url )
     {
         ValidationReport vr = null;
@@ -102,7 +102,7 @@ public class SchematronSchema
     }
 
 
-    private ValidationReport validateCandidate( InputStream candidateStream )
+    public ValidationReport validateCandidate( InputStream candidateStream )
     {
         JarUriResolver jur = new JarUriResolver();
         TransformerFactory jarAwareTransformerFactory = Utils.getTransformerFactory();
