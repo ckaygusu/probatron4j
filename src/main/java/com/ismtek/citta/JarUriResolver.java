@@ -36,7 +36,7 @@ public class JarUriResolver implements URIResolver
     public Source resolve( String href, String base ) throws TransformerException
     {
         logger.debug( "Resolving stylesheet URI: " + href );
-        InputStream is = JarUriResolver.class.getResourceAsStream( "/resource/stylesheet/"
+        InputStream is = JarUriResolver.class.getResourceAsStream( "/stylesheet/"
                 + href );
         return new StreamSource( is );        
     }
