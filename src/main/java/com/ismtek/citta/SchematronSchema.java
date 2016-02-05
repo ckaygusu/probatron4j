@@ -140,7 +140,7 @@ public class SchematronSchema
             xsltSource = jur.resolve( "iso_svrl_for_xslt2.xsl", null );
             t = jarAwareTransformerFactory.newTransformer( xsltSource );
             t.setParameter( "full-path-notation", "4" );
-            if( session.getPhase() != null )
+            if( session != null && session.getPhase() != null )
             {
                 t.setParameter( "phase", session.getPhase() );
             }
